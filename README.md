@@ -59,6 +59,25 @@ const stream = await client.chat.completions.create({
 for await (const c of stream) process.stdout.write(c.choices?.[0]?.delta?.content || "");
 ```
 
+### OpenAI Codex CLI
+
+`~/.codex/config.toml`：
+
+```toml
+model = "glm-5.3"
+model_provider = "cannbot"
+model_reasoning_effort = "high"
+disable_response_storage = true
+
+[model_providers.cannbot]
+name = "cannbot"
+base_url = "http://127.0.0.1:8117/v1"
+wire_api = "responses"
+```
+
+> codex 新版本已移除 `wire_api = "chat"`，只能走 `responses`。relay 会把 `/v1/responses` 请求翻译为网关的 Chat Completions 并将流式响应转回 Responses SSE 事件（含 `function_call` / `reasoning` 条目）。
+> 若 relay 启动时设置了 `RELAY_API_KEY`，还需在 provider 中加 `env_key = "RELAY_API_KEY"` 并在启动 codex 的环境中 `export RELAY_API_KEY=<key>`。
+
 ### curl
 
 ```bash
@@ -74,6 +93,7 @@ curl http://127.0.0.1:8117/v1/chat/completions \
 |---|---|
 | `GET /v1/models` | 模型列表（从 cannbot API 实时拉取，5 分钟缓存；不可达时回退内置列表） |
 | `POST /v1/chat/completions` | 对话补全，支持流式（SSE）与非流式 |
+| `POST /v1/responses` | OpenAI Responses API（桥接为网关 Chat Completions，支持流式、工具调用、思维链），供 codex 等使用 |
 | `GET /health` | 健康检查 |
 
 ## 可用模型
